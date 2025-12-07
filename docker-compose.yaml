@@ -1,76 +1,36 @@
 version: "3.9"
+
 services:
   db:
     image: postgres:16
-    container_name: eve-db
-    restart: unless-stopped
+    container_name: eve_local_db
     environment:
       POSTGRES_DB: eve_main
       POSTGRES_USER: freeman_user
       POSTGRES_PASSWORD: hellotherefreeman
-    volumes:
-      - /srv/dbs/eve_db_data:/var/lib/postgresql/data
-    networks:
-      - pgnetwork
     ports:
       - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U freeman_user -d eve_main"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
   backend:
-    build: ./backend
-    container_name: eve-backend
-    restart: unless-stopped
+    container_name: eve_local_backend
+    build:
+      context: ./backend
     environment:
       DB_HOST: db
       DB_PORT: 5432
-      DB_NAME: eve_main
       DB_USER: freeman_user
       DB_PASSWORD: hellotherefreeman
-      VIRTUAL_HOST: evebend.itsconstant.site
-      LETSENCRYPT_HOST: evebend.itsconstant.site
-      LETSENCRYPT_EMAIL: jackeandco@gmail.com
-    networks:
-      - pgnetwork
-      - nginx-proxy_net
-    expose:
-      - "4000"
-
-  frontend:
-    image: nginx:alpine
-    container_name: eve-frontend
-    restart: unless-stopped
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
-    environment:
-      - VIRTUAL_HOST=eve.itsconstant.site
-      - VIRTUAL_PORT=80
-      - LETSENCRYPT_HOST=eve.itsconstant.site
-      - LETSENCRYPT_EMAIL=jackeandco@gmail.com
-    networks:
-      - nginx-proxy_net
-    expose:
-      - "80"
-
-  pgadmin:
-    image: dpage/pgadmin4
-    container_name: eve-pgadmin
-    restart: unless-stopped
-    environment:
-      PGADMIN_DEFAULT_EMAIL: jackeandco@gmail.com
-      PGADMIN_DEFAULT_PASSWORD: evebdpassword
+      DB_NAME: eve_main
+      PORT: 4000
     ports:
-      - "8080:80"
-    networks:
-      - pgnetwork
+      - "4000:4000"
+    depends_on:
+      - db
     volumes:
-      - /srv/dbs/pgadmin:/var/lib/pgadmin
+      - ./backend:/app
+    command: ["npm", "start"]
 
-networks:
-  pgnetwork:
-    driver: bridge
-  nginx-proxy_net:
-    external: true
+volumes:
+  pgdata:
