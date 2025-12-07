@@ -21,7 +21,7 @@ services:
       retries: 10
 
   backend:
-    build: ./backend
+    build: ./backend-django
     container_name: eve-backend
     restart: unless-stopped
     environment:
