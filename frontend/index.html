@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eve :: управление товарами</title>
+    <style>
+        body {font-family: sans-serif; max-width: 1000px; margin: 2em auto; padding: 1em; background:#fafafa;}
+        table {width:100%; border-collapse:collapse; margin:2em 0; background:white;}
+        th, td {border:1px solid #ddd; padding:10px; text-align:left;}
+        th {background:#f0f0f0;}
+        input, button {padding:8px; margin:5px;}
+        .del {background:#ff4444; color:white; border:none;}
+    </style>
+</head>
+<body>
+    <h1>Управление товарами</h1>
+    <table id="table"><tr><td>Загрузка данных...</td></tr></table>
+
+    <h2>Добавить товар</h2>
+    <form id="form">
+        <input type="number" id="id" placeholder="ID (обязательно)" required>
+        <input type="text" id="name" placeholder="Название" required>
+        <input type="text" id="description" placeholder="Описание">
+        <input type="number" step="0.01" id="base_price" placeholder="Цена" required>
+        <button type="submit">Сохранить</button>
+    </form>
+
+    <script>
+        const API = 'https://evebend.itsconstant.site/products';
+
+        async function load() {
+            try {
+                const res = await fetch(API);
+                const data = await res.json();
+                document.getElementById('table').innerHTML = `
+                    <tr><th>ID</th><th>Название</th><th>Описание</th><th>Цена</th><th></th></tr>
+                    ${data.map(p => `<tr>
+                        <td>${p.id}</td>
+                        <td>${p.name}</td>
+                        <td>${p.description || ''}</td>
+                        <td>${p.base_price}</td>
+                        <td><button class="del" onclick="del(${p.id})">удалить</button></td>
+                    </tr>`).join('')}
+                `;
+            } catch (e) {
+                document.getElementById('table').innerHTML = `<tr><td>Ошибка загрузки: ${e.message}</td></tr>`;
+            }
+        }
+
+        document.getElementById('form').onsubmit = async e => {
+            e.preventDefault();
+            const body = {
+                id: +document.getElementById('id').value,
+                name: document.getElementById('name').value,
+                description: document.getElementById('description').value || null,
+                base_price: +document.getElementById('base_price').value
+            };
+            await fetch(API, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+            load();
+        };
+
+        async function del(id) {
+            if (confirm('Удалить товар '+id+'?')) {
+                await fetch(API + '/' + id, {method:'DELETE'});
+                load();
+            }
+        }
+
+        load();
+        setInterval(load, 15000); // автообновление каждые 15 сек
+    </script>
+</body>
+</html>
