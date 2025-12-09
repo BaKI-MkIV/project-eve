@@ -13,4 +13,4 @@ ENV DJANGO_SETTINGS_MODULE=eve_backend.settings
 
 EXPOSE 4000
 
-CMD ["gunicorn", "eve_backend.wsgi:application", "--bind", "0.0.0.0:4000"]
+CMD ["gunicorn", "eve_backend.wsgi:application", "--bind", "0.0.0.0:4000", "--timeout", "120", "--workers", "3"]

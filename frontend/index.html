@@ -2,78 +2,428 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eve :: управление товарами</title>
+    <title>EVE Admin Panel</title>
+
     <style>
-        body {font-family: sans-serif; max-width: 1000px; margin: 2em auto; padding: 1em; background:#fafafa;}
-        table {width:100%; border-collapse:collapse; margin:2em 0; background:white;}
-        th, td {border:1px solid #ddd; padding:10px; text-align:left;}
-        th {background:#f0f0f0;}
-        input, button {padding:8px; margin:5px;}
-        .del {background:#ff4444; color:white; border:none;}
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0f0f0f;
+            color: #d0d0d0;
+        }
+
+        h1, h2 {
+            margin: 0 0 15px 0;
+            font-weight: normal;
+            color: #fff;
+        }
+
+        a { color: #ffa726; }
+
+        input, button, textarea {
+            background: #1b1b1b;
+            border: 1px solid #333;
+            padding: 8px 10px;
+            color: #ccc;
+            font-size: 14px;
+            border-radius: 4px;
+        }
+
+        input:focus, textarea:focus {
+            border-color: #ffa726;
+            outline: none;
+        }
+
+        button {
+            cursor: pointer;
+        }
+        button:hover { background: #2a2a2a; }
+
+        .hidden { display: none; }
+
+        /* LAYOUT */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px;
+        }
+
+        .panel {
+            background: #161616;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 6px;
+            margin-bottom: 35px;
+        }
+
+        /* LOGIN */
+        #login-section {
+            max-width: 380px;
+            margin: 120px auto;
+        }
+
+        .error {
+            margin-top: 10px;
+            padding: 10px;
+            background: #3a0000;
+            border: 1px solid #660000;
+            color: #ff8c8c;
+            display: none;
+            border-radius: 4px;
+        }
+
+        /* USER BAR */
+        .user-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #1b1b1b;
+            border: 1px solid #333;
+            padding: 12px 20px;
+            border-radius: 6px;
+            margin-bottom: 25px;
+        }
+
+        .logout-btn {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            padding: 7px 14px;
+            border-radius: 4px;
+        }
+        .logout-btn:hover { background: #383838; }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #141414;
+            border: 1px solid #333;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        table th, table td {
+            padding: 12px;
+            border-bottom: 1px solid #1f1f1f;
+            font-size: 14px;
+        }
+
+        table th {
+            background: #1c1c1c;
+            color: #ccc;
+            font-weight: bold;
+        }
+
+        tr:nth-child(even) td { background: #121212; }
+
+        .danger {
+            background: #3a1a1a;
+            border: 1px solid #553;
+            color: #e07171;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .danger:hover { background: #4a2222; }
+
+        /* FORMS */
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 60px;
+            resize: vertical;
+        }
+
+        .submit-btn {
+            background: #333;
+            border: 1px solid #444;
+            padding: 10px 18px;
+        }
+        .submit-btn:hover { background: #3c3c3c; }
+
+        /* FILE UPLOAD */
+        .file-upload {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed #555;
+            border-radius: 6px;
+            background: #131313;
+        }
+
+        .file-upload input {
+            background: none;
+            border: none;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
-    <h1>Управление товарами</h1>
-    <table id="table"><tr><td>Загрузка данных...</td></tr></table>
 
-    <h2>Добавить товар</h2>
-    <form id="form">
-        <input type="number" id="id" placeholder="ID (обязательно)" required>
-        <input type="text" id="name" placeholder="Название" required>
-        <input type="text" id="description" placeholder="Описание">
-        <input type="number" step="0.01" id="base_price" placeholder="Цена" required>
-        <button type="submit">Сохранить</button>
+<!-- LOGIN -->
+<div id="login-section" class="panel">
+    <h1>Вход</h1>
+    <form id="login-form">
+        <input id="email" placeholder="Email" type="text" style="width: 100%; margin-bottom: 12px;">
+        <input id="password" placeholder="Пароль" type="password" style="width: 100%;">
+        <button type="submit" class="submit-btn" style="width: 100%; margin-top: 12px;">Войти</button>
+        <div id="login-error" class="error"></div>
     </form>
+</div>
 
-    <script>
-        const API_BASE =
-    location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+<!-- MAIN PANEL -->
+<div id="user-section" class="container hidden">
+    <div class="user-bar">
+        <span>Вы вошли как: <b id="user-email"></b></span>
+        <button onclick="logout()" class="logout-btn">Выйти</button>
+    </div>
+
+    <h1>Товары</h1>
+    <div class="panel">
+
+        <!-- Add one -->
+        <h2>Добавить товар</h2>
+        <form id="add-form">
+            <div class="form-row">
+                <input id="name" placeholder="Название">
+                <input id="price" placeholder="Цена" type="number" step="0.01">
+            </div>
+            <textarea id="description" placeholder="Описание"></textarea>
+            <button type="submit" class="submit-btn" style="margin-top: 10px;">Добавить</button>
+        </form>
+
+        <!-- Add many -->
+        <h2 style="margin-top: 35px;">Загрузить JSON</h2>
+        <div class="file-upload">
+            <input type="file" id="json-file" accept=".json">
+            <button onclick="uploadJSON()" class="submit-btn" style="margin-left: 10px;">Загрузить</button>
+            <div class="info" id="upload-status" style="margin-top: 10px; color: #777;"></div>
+        </div>
+
+        <!-- Table -->
+        <table style="margin-top: 35px;">
+            <tbody id="products-table">
+                <tr><td style="padding: 25px;">Загрузка...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="info">
+        Backend: <span id="backend-info"></span>
+    </div>
+</div>
+
+<script>
+    /* API DETECTION */
+    const API_BASE = (location.hostname === 'localhost' || location.hostname === '127.0.0.1')
         ? 'http://localhost:4000'
         : 'https://evebend.itsconstant.site';
 
-        const API = API_BASE + '/products';
+    const API_AUTH = API_BASE + '/api/auth/login/';
+    const API_PRODUCTS = API_BASE + '/products/';
 
-        async function load() {
-            try {
-                const res = await fetch(API);
-                const data = await res.json();
-                document.getElementById('table').innerHTML = `
-                    <tr><th>ID</th><th>Название</th><th>Описание</th><th>Цена</th><th></th></tr>
-                    ${data.map(p => `<tr>
-                        <td>${p.id}</td>
-                        <td>${p.name}</td>
-                        <td>${p.description || ''}</td>
-                        <td>${p.base_price}</td>
-                        <td><button class="del" onclick="del(${p.id})">удалить</button></td>
-                    </tr>`).join('')}
+    document.getElementById('backend-info').textContent = API_BASE;
+
+    /* AUTH UI */
+    function showLogin() {
+        document.getElementById('login-section').classList.remove('hidden');
+        document.getElementById('user-section').classList.add('hidden');
+    }
+
+    function showPanel() {
+        document.getElementById('login-section').classList.add('hidden');
+        document.getElementById('user-section').classList.remove('hidden');
+        document.getElementById('user-email').textContent = localStorage.getItem('user_email') || 'Пользователь';
+    }
+
+    function checkAuth() {
+        const token = localStorage.getItem('access_token');
+        if (token) {
+            showPanel();
+            loadProducts();
+        } else {
+            showLogin();
+        }
+    }
+
+    /* LOGIN */
+    document.getElementById('login-form').onsubmit = async e => {
+        e.preventDefault();
+
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const error = document.getElementById('login-error');
+
+        if (!email || !password) {
+            error.textContent = 'Заполните все поля';
+            error.style.display = 'block';
+            return;
+        }
+
+        try {
+            const res = await fetch(API_AUTH, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (!res.ok) throw new Error('Неверный логин или пароль');
+
+            const data = await res.json();
+            localStorage.setItem('access_token', data.access);
+            localStorage.setItem('refresh_token', data.refresh);
+            localStorage.setItem('user_email', email);
+
+            showPanel();
+            loadProducts();
+        } catch (err) {
+            error.textContent = err.message;
+            error.style.display = 'block';
+        }
+    };
+
+    function logout() {
+        localStorage.clear();
+        location.reload();
+    }
+
+    /* FETCH WRAPPER */
+    async function apiFetch(url, options = {}) {
+        const token = localStorage.getItem('access_token');
+        const headers = { 'Content-Type': 'application/json', ...options.headers };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const res = await fetch(url, { ...options, headers });
+
+        if (res.status === 401) {
+            alert('Сессия истекла.');
+            logout();
+        }
+        return res;
+    }
+
+    /* LOAD PRODUCTS */
+    async function loadProducts() {
+        const table = document.getElementById('products-table');
+
+        try {
+            const res = await apiFetch(API_PRODUCTS);
+            if (!res.ok) throw new Error('Ошибка загрузки товаров');
+
+            const data = await res.json();
+
+            table.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Название</th>
+                    <th>Описание</th>
+                    <th style="text-align:right;">Цена</th>
+                    <th></th>
+                </tr>
+            `;
+
+            for (const p of data) {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${p.id}</td>
+                    <td>${p.name}</td>
+                    <td>${p.description || '—'}</td>
+                    <td style="text-align:right;">${Number(p.base_price).toFixed(2)}</td>
+                    <td><button class="danger" onclick="del(${p.id})">Удалить</button></td>
                 `;
-            } catch (e) {
-                document.getElementById('table').innerHTML = `<tr><td>Ошибка загрузки: ${e.message}</td></tr>`;
+                table.appendChild(row);
             }
+        } catch (e) {
+            table.innerHTML = `<tr><td colspan="5" style="padding:20px; color:#c0392b;">${e.message}</td></tr>`;
+        }
+    }
+
+    /* ADD ONE PRODUCT */
+    document.getElementById('add-form').onsubmit = async e => {
+        e.preventDefault();
+
+        const name = document.getElementById('name').value.trim();
+        const price = document.getElementById('price').value;
+        const description = document.getElementById('description').value.trim() || null;
+
+        if (!name || !price) {
+            alert('Заполните название и цену');
+            return;
         }
 
-        document.getElementById('form').onsubmit = async e => {
-            e.preventDefault();
-            const body = {
-                id: +document.getElementById('id').value,
-                name: document.getElementById('name').value,
-                description: document.getElementById('description').value || null,
-                base_price: +document.getElementById('base_price').value
-            };
-            await fetch(API, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-            load();
-        };
+        const body = { name, description, base_price: parseFloat(price) };
 
-        async function del(id) {
-            if (confirm('Удалить товар '+id+'?')) {
-                await fetch(API + '/' + id, {method:'DELETE'});
-                load();
-            }
+        try {
+            const res = await apiFetch(API_PRODUCTS, {
+                method: 'POST',
+                body: JSON.stringify(body)
+            });
+            if (!res.ok) throw new Error('Ошибка добавления товара');
+
+            e.target.reset();
+            loadProducts();
+        } catch (err) {
+            alert(err.message);
+        }
+    };
+
+    /* DELETE */
+    async function del(id) {
+        if (!confirm(`Удалить товар #${id}?`)) return;
+
+        const res = await apiFetch(API_PRODUCTS + id + '/', { method: 'DELETE' });
+        if (res.ok) loadProducts();
+    }
+
+    /* UPLOAD JSON FILE */
+    async function uploadJSON() {
+        const fileInput = document.getElementById('json-file');
+        const status = document.getElementById('upload-status');
+
+        if (!fileInput.files.length) {
+            status.textContent = 'Файл не выбран.';
+            return;
         }
 
-        load();
-        setInterval(load, 15000); // автообновление каждые 15 сек
-    </script>
+        try {
+            const text = await fileInput.files[0].text();
+            const json = JSON.parse(text);
+
+            if (!Array.isArray(json)) {
+                status.textContent = 'JSON должен быть массивом объектов.';
+                return;
+            }
+
+            const res = await apiFetch(API_PRODUCTS + 'bulk/', {
+                method: 'POST',
+                body: JSON.stringify(json)
+            });
+
+            if (!res.ok) {
+                const err = await res.text();
+                throw new Error(err || 'Ошибка загрузки');
+            }
+
+            status.textContent = `Успешно загружено ${json.length} товаров.`;
+            status.style.color = '#8f8';
+            loadProducts();
+        } catch (e) {
+            status.textContent = 'Ошибка: ' + e.message;
+            status.style.color = '#fcc';
+        }
+    }
+
+    /* AUTO REFRESH */
+    setInterval(() => {
+        if (localStorage.getItem('access_token')) loadProducts();
+    }, 15000);
+
+    // Старт
+    checkAuth();
+</script>
+
 </body>
 </html>

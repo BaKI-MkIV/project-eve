@@ -14,10 +14,13 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   backend:
-    container_name: eve_local_backend
+    container_name: eve_local_backend_dj
     build:
-      context: ./backend
+      context: backend_django
+    env_file:
+      - backend_django/.env
     environment:
+      DJANGO_SETTINGS_MODULE: eve_backend.settings
       DB_HOST: db
       DB_PORT: 5432
       DB_USER: freeman_user
@@ -29,8 +32,8 @@ services:
     depends_on:
       - db
     volumes:
-      - ./backend:/app
-    command: ["npm", "start"]
+      - ./backend_django:/app/backend_django
+
 
 volumes:
   pgdata:
