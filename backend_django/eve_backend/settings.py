@@ -31,10 +31,15 @@ INSTALLED_APPS = [
     # Your apps
     'accounts',
     'products',
+    'actors',
+    'economy',
+    'inventory',
+    'market',
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',        # Обязательно
     'corsheaders.middleware.CorsMiddleware',                        # CORS сразу после Session
     'django.middleware.common.CommonMiddleware',
@@ -44,11 +49,11 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 ROOT_URLCONF = 'eve_backend.urls'
 WSGI_APPLICATION = 'eve_backend.wsgi.application'
 
-# Кастомная модель пользователя
-AUTH_USER_MODEL = 'accounts.CustomUser'
 
 # Database
 DATABASES = {
