@@ -40,7 +40,7 @@ class TransferRequest(models.Model):
         help_text="Принятая сумма/количество (для partial)"
     )
 
-    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
 
     is_auto = models.BooleanField(default=False, help_text="Автоматический запрос (только для системных акторов)")
 

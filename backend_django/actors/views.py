@@ -8,7 +8,7 @@ from django.db import transaction
 
 from .models import Actor
 from .serializers import ActorSerializer
-from ..accounts.permissions import IsMasterUser
+from accounts.permissions import IsMasterUser
 
 
 class ActorViewSet(viewsets.ModelViewSet):

@@ -6,7 +6,7 @@ from django.db import transaction
 
 from .models import Product
 from .serializers import ProductSerializer
-from ..accounts.permissions import IsMasterUser
+from accounts.permissions import IsMasterUser
 
 
 class ProductViewSet(viewsets.ModelViewSet):

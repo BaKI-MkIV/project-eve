@@ -1,6 +1,5 @@
 from django.db import models
 from django.db.models import Q
-from django.contrib.postgres.fields import ArrayField  # Если нужны теги, но для Actor опционально
 
 
 class Actor(models.Model):
