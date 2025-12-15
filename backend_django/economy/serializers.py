@@ -1,4 +1,9 @@
+from decimal import Decimal
+
 from rest_framework import serializers
+
+from actors.models import Actor
+from products.models import Product
 from .models import Currency, ActorBalance
 
 class CurrencySerializer(serializers.ModelSerializer):

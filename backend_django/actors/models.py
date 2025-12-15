@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models import Q
 from django.contrib.postgres.fields import ArrayField  # Если нужны теги, но для Actor опционально
 
 
@@ -41,7 +42,7 @@ class Actor(models.Model):
         indexes = [models.Index(fields=['name', 'type'])]
         constraints = [
             models.CheckConstraint(
-                check=models.Q(type='player', user__isnull=False) | ~models.Q(type='player'),
+                condition=Q(type='player', user__isnull=False) | ~Q(type='player'),
                 name='player_must_have_user'
             )
         ]

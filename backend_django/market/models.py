@@ -55,3 +55,24 @@ class FrozenBalance(models.Model):
     currency = models.ForeignKey('economy.Currency', on_delete=models.PROTECT)
 
     amount = models.DecimalField(max_digits=18, decimal_places=2)
+
+
+class Trade(models.Model):
+    buy_order = models.ForeignKey(MarketOrder, on_delete=models.PROTECT, null=True, blank=True,
+                                  related_name='buy_trades')
+    sell_order = models.ForeignKey(MarketOrder, on_delete=models.PROTECT, null=True, blank=True,
+                                   related_name='sell_trades')
+
+    buyer = models.ForeignKey('actors.Actor', on_delete=models.PROTECT, related_name='purchases')
+    seller = models.ForeignKey('actors.Actor', on_delete=models.PROTECT, related_name='sales')
+
+    product = models.ForeignKey('products.Product', on_delete=models.PROTECT)
+    quantity = models.DecimalField(max_digits=18, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=18, decimal_places=2)
+    total_price = models.DecimalField(max_digits=20, decimal_places=8)  # quantity * unit_price
+    broker_fee = models.DecimalField(max_digits=20, decimal_places=8, default=0)  # комиссия брокеру
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Сделка {self.quantity} {self.product} по {self.unit_price} GP"

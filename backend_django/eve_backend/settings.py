@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'economy',
     'inventory',
     'market',
+    'transfers',
 ]
 
 MIDDLEWARE = [
