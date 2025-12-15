@@ -12,3 +12,12 @@ class ActorBalanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ActorBalance
         fields = ['id', 'actor_id', 'currency', 'amount']
+
+
+class WalletSerializer(serializers.ModelSerializer):
+    currency_code = serializers.CharField(source='currency.code')
+    currency_name = serializers.CharField(source='currency.name')
+
+    class Meta:
+        model = ActorBalance
+        fields = ['currency_code', 'currency_name', 'amount']

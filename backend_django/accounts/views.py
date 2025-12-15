@@ -10,8 +10,15 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from actors.models import Actor
+from economy.models import ActorBalance
+from economy.serializers import WalletSerializer
+from inventory.models import InventoryItem
+from inventory.serializers import InventorySerializer
 from .permissions import IsMasterUser
 from .serializers import MyTokenObtainPairSerializer, UserSerializer, CreateUserSerializer
+
+from actors.models import Actor
+from actors.serializers import PublicActorSerializer, UpdateMeActorSerializer
 
 
 # Логин — использует наш кастомный сериализатор
@@ -164,3 +171,66 @@ def update_profile(request):
         "message": "Профиль обновлён",
         "login": user.login
     })
+
+class MeActorViewSet(viewsets.ViewSet):
+    permission_classes = [IsAuthenticated]
+
+    def retrieve(self, request):
+        """
+        GET /auth/me/actor/
+        Возвращает данные своего актора
+        """
+        user = request.user
+        try:
+            actor = user.actor  # Через related_name='actor'
+        except Actor.DoesNotExist:
+            return Response({"error": "У вас нет привязанного актора"}, status=404)
+
+        serializer = PublicActorSerializer(actor)
+        return Response(serializer.data)
+
+    def partial_update(self, request):
+        """
+        PATCH /auth/me/actor/
+        Обновляет имя и/или описание
+        """
+        user = request.user
+        try:
+            actor = user.actor
+        except Actor.DoesNotExist:
+            return Response({"error": "У вас нет привязанного актора"}, status=404)
+
+        serializer = UpdateMeActorSerializer(actor, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+class MeWalletView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        try:
+            actor = user.actor
+        except Actor.DoesNotExist:
+            return Response({"error": "Актор не найден"}, status=404)
+
+        balances = ActorBalance.objects.filter(actor=actor)
+        serializer = WalletSerializer(balances, many=True)
+        return Response(serializer.data)
+
+
+class MeInventoryView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        try:
+            actor = user.actor
+        except Actor.DoesNotExist:
+            return Response({"error": "Актор не найден"}, status=404)
+
+        items = InventoryItem.objects.filter(actor=actor).select_related('product')
+        serializer = InventorySerializer(items, many=True)
+        return Response(serializer.data)
