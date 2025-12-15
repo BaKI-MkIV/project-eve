@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.postgres',
+    'drf_spectacular',
 
     # Third-party
     'rest_framework',
@@ -100,6 +101,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     # Опционально: красивые ошибки
     # 'EXCEPTION_HANDLER': 'products.exceptions.custom_exception_handler',
 }
@@ -157,4 +159,11 @@ LOGGING = {
         'handlers': ['console'],
         'level': 'INFO',
     },
+}
+
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'RPG Economy API',
+    'DESCRIPTION': 'MVP рынка для ролевой игры',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
 }
