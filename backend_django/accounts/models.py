@@ -31,14 +31,17 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+
     ROLE_CHOICES = (
         ('player', 'Player'),
         ('master', 'Master'),
+        ('automat', 'Automat'),
     )
 
     id = models.BigAutoField(primary_key=True)
     login = models.CharField(max_length=150, unique=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='player')
+    role = models.CharField(max_length=16, choices=ROLE_CHOICES)
+
 
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)  # Для доступа в админку

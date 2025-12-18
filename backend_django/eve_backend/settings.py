@@ -33,6 +33,8 @@ INSTALLED_APPS = [
     # Your apps
     'accounts',
     'actors',
+    'economy',
+    'products',
 ]
 
 MIDDLEWARE = [
