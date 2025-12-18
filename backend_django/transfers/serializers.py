@@ -14,6 +14,7 @@ class CreateTransferRequestSerializer(serializers.ModelSerializer):
         fields = ['from_actor', 'type', 'currency', 'product', 'product_name', 'requested_amount', 'is_auto']
 
     def validate(self, attrs):
+        # 1. Проверка типа запроса и обязательных полей
         if attrs['type'] == 'money':
             if not attrs.get('currency'):
                 raise serializers.ValidationError("Для money нужен currency")
@@ -24,10 +25,25 @@ class CreateTransferRequestSerializer(serializers.ModelSerializer):
                 except Product.DoesNotExist:
                     raise serializers.ValidationError("Продукт не найден по имени")
             if not attrs.get('product'):
-                raise serializers.ValidationError("Для item нужен product")
+                raise serializers.ValidationError("Для item нужен product или product_name")
 
-        if attrs.get('is_auto') and not self.context['request'].user.actor.is_system:
-            raise serializers.ValidationError("Авто-запросы только для системных акторов")
+        # 2. Проверка флага is_auto — только для системных акторов
+        if attrs.get('is_auto'):
+            # to_actor — это создатель запроса (request.user.actor)
+            if not self.context['request'].user.actor.is_system:
+                raise serializers.ValidationError("Авто-запросы только для системных акторов")
+
+        # 3. НОВАЯ ПРОВЕРКА: флаг generate — только для системных from_actor
+        if attrs.get('generate', False):
+            from_actor = attrs.get('from_actor')
+            if not from_actor:
+                raise serializers.ValidationError("generate=True требует указания from_actor")
+            if not from_actor.is_system:
+                raise serializers.ValidationError("generate=True разрешён только для системных акторов (from_actor)")
+
+        # 4. Дополнительно: можно запретить generate + is_auto одновременно, если не нужно
+        # if attrs.get('generate') and attrs.get('is_auto'):
+        #     raise serializers.ValidationError("generate и is_auto нельзя использовать одновременно")
 
         return attrs
 

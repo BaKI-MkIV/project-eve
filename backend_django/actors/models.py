@@ -8,7 +8,7 @@ class Actor(models.Model):
 
     user = models.OneToOneField(
         'accounts.User',
-        on_delete=models.PROTECT,
+        on_delete=models.SET_NULL,  # ← вместо PROTECT
         null=True,
         blank=True,
         related_name='actor'
@@ -41,7 +41,7 @@ class Actor(models.Model):
         indexes = [models.Index(fields=['name', 'type'])]
         constraints = [
             models.CheckConstraint(
-                condition=Q(type='player', user__isnull=False) | ~Q(type='player'),
+                condition=~Q(type='player') | Q(user__isnull=False),
                 name='player_must_have_user'
             )
         ]

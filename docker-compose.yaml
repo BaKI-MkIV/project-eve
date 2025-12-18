@@ -27,6 +27,7 @@ services:
       DB_PASSWORD: hellotherefreeman
       DB_NAME: eve_main
       PORT: 4000
+
     ports:
       - "4000:4000"
     depends_on:
@@ -34,6 +35,15 @@ services:
     volumes:
       - ./backend_django:/app/backend_django
 
+#  frontend:
+#    image: nginx:alpine
+#    container_name: eve_local_frontend
+#    ports:
+#      - "3000:80"  # Добавил порт для доступа
+#    volumes:
+#      - ./frontend:/usr/share/nginx/html:ro
+#    depends_on:
+#      - backend
 
 volumes:
   pgdata:

@@ -47,6 +47,8 @@ class TransferRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    generate = models.BooleanField(default=False, help_text="Генерировать ресурсы из воздуха для is_system from_actor")
+
     class Meta:
         verbose_name = 'Запрос на перевод'
         verbose_name_plural = 'Запросы на переводы'

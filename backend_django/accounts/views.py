@@ -80,62 +80,68 @@ class LogoutView(APIView):
 User = get_user_model()
 
 
-class UserViewSet(viewsets.ViewSet):
-    """
-    Только для мастера:
-    - GET    /users/       — список всех пользователей
-    - POST   /users/       — создать пользователя с генерацией логина/пароля
-    """
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     permission_classes = [IsMasterUser]
 
-    def list(self, request):
-        queryset = User.objects.all()
-        serializer = UserSerializer(queryset, many=True)
-        return Response(serializer.data)
+    def get_queryset(self):
+        return User.objects.all().order_by('-created_at')
 
     def create(self, request):
         serializer = CreateUserSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        # Генерация случайного логина и пароля
-        login = f"player_{uuid.uuid4().hex[:10]}"  # Пример: player_a1b2c3d4e5
-        raw_password = uuid.uuid4().hex[:12]       # 12 символов — безопасно и удобно
+        login = f"player_{uuid.uuid4().hex[:10]}"
+        raw_password = uuid.uuid4().hex[:12]
 
-        # Создаём пользователя
         user = User.objects.create_user(
             login=login,
             password=raw_password,
             role=serializer.validated_data['role']
         )
 
-        # Привязываем или создаём актора
         actor_id = serializer.validated_data.get('actor_id')
         if actor_id:
             actor = Actor.objects.get(id=actor_id)
         else:
-            # Создаём новый generic актор
             actor = Actor.objects.create(
-                name=login,  # Можно сделать f"Игрок {uuid.uuid4().hex[:6]}", если хочешь анонимнее
+                name=login,
                 type='player',
                 user=user,
                 is_hidden=False,
                 is_system=False
             )
 
-        # Привязка (на всякий случай, если был указан actor_id)
         actor.user = user
         actor.save()
 
         return Response({
             "user_id": user.id,
             "login": login,
-            "raw_password": raw_password,  # Мастер передаст игроку вручную
+            "raw_password": raw_password,
             "actor_id": actor.id,
             "actor_name": actor.name,
             "message": "Пользователь создан. Передайте логин и пароль игроку."
         }, status=status.HTTP_201_CREATED)
 
+    # Опционально: запрети удаление суперюзера или себя
+    def destroy(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        try:
+            actor = instance.actor
+            actor.user = None
+            actor.type = 'npc'  # ← меняем тип с 'player' на 'npc'
+            actor.is_system = True  # ← делаем системным
+            actor.name = f"[Бывший игрок] {actor.name}"  # опционально — пометить
+            actor.save()
+        except Actor.DoesNotExist:
+            pass
+
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 from rest_framework.decorators import api_view, permission_classes
 

@@ -94,24 +94,37 @@ class TransferRequestViewSet(viewsets.ModelViewSet):
                 return Response({"error": "Неверная сумма"}, status=400)
 
             with transaction.atomic():
+                if req.generate and req.from_actor.is_system:
+                    # Генерация "из воздуха" — создаём запись, если нет, но не списываем
+                    if req.type == 'money':
+                        from_balance, _ = ActorBalance.objects.get_or_create(actor=req.from_actor,
+                                                                             currency=req.currency)
+                        from_balance.amount += amount  # Оседает, если не перевели, но поскольку переводим — баланс остаётся
+                    else:
+                        from_item, _ = InventoryItem.objects.get_or_create(actor=req.from_actor, product=req.product)
+                        from_item.quantity += amount
+
+                # Стандартный перевод (с проверкой и списанием, если не system)
                 if req.type == 'money':
                     from_balance = ActorBalance.objects.get(actor=req.from_actor, currency=req.currency)
-                    if from_balance.amount < amount:
+                    if not req.from_actor.is_system and from_balance.amount < amount:
                         return Response({"error": "Недостаточно средств"}, status=400)
-                    from_balance.amount -= amount
-                    from_balance.save()
+                    if not req.from_actor.is_system:
+                        from_balance.amount -= amount
+                        from_balance.save()
                     to_balance, _ = ActorBalance.objects.get_or_create(actor=req.to_actor, currency=req.currency)
                     to_balance.amount += amount
                     to_balance.save()
                 else:
                     from_item = InventoryItem.objects.get(actor=req.from_actor, product=req.product)
-                    if from_item.quantity < amount:
+                    if not req.from_actor.is_system and from_item.quantity < amount:
                         return Response({"error": "Недостаточно предметов"}, status=400)
-                    from_item.quantity -= amount
-                    if from_item.quantity == 0:
-                        from_item.delete()
-                    else:
-                        from_item.save()
+                    if not req.from_actor.is_system:
+                        from_item.quantity -= amount
+                        if from_item.quantity == 0:
+                            from_item.delete()
+                        else:
+                            from_item.save()
                     to_item, _ = InventoryItem.objects.get_or_create(actor=req.to_actor, product=req.product)
                     to_item.quantity += amount
                     to_item.save()
