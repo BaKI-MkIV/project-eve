@@ -1,26 +1,15 @@
 from django.db import models
 
+from economy.models import Tag, Currency
+
 
 class Product(models.Model):
     name = models.CharField(max_length=255, unique=True, db_index=True)
     price = models.DecimalField(max_digits=18, decimal_places=2, null=True, blank=True)
     description = models.TextField(blank=True)
 
-    currency = models.ForeignKey(
-        'Currency',
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='products',
-        help_text="Валюта, в которой считается цена"
-    )
-
-    tags = models.ManyToManyField(
-        'Tag',
-        blank=True,
-        related_name='products',
-        help_text="Теги для удобного поиска/фильтрации"
-    )
+    currency = models.ForeignKey(Currency, on_delete=models.PROTECT)
+    tags = models.ManyToManyField(Tag, blank=True)
 
     is_active = models.BooleanField(default=True, help_text="Можно ли взаимодействовать с предметом за пределами своего инвентаря")
     is_legal = models.BooleanField(default=True, help_text="if False - можно передавать, но нельзя выставлять на рынок")  # новые легальные предметы

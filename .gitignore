@@ -6,3 +6,6 @@ venv/
 *.pyc
 pg_data/
 
+docker-compose-bak.yaml
+docker-compose.yaml
+docker-compose.yaml.save
