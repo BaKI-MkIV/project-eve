@@ -32,12 +32,7 @@ INSTALLED_APPS = [
 
     # Your apps
     'accounts',
-    'products',
     'actors',
-    'economy',
-    'inventory',
-    'market',
-    'transfers',
 ]
 
 MIDDLEWARE = [
