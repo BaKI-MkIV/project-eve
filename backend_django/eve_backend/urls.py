@@ -8,6 +8,7 @@ urlpatterns = [
     path('auth/', include('accounts.urls')),
     path('actors/', include('actors.urls')),
     path('economy/', include('economy.urls')),
+    path('internal/', include('wallet_inventory.urls')),
 
     # Полная схема для staff (через login/password)
     path('tech/schema/', staff_schema_view, name='schema'),
