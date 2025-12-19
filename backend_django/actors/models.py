@@ -19,7 +19,7 @@ class Actor(models.Model):
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name='actors'
+        related_name='actor'
     )
 
     # Активен ли актор (может участвовать в сделках)
@@ -59,14 +59,15 @@ class Actor(models.Model):
         ordering = ['-created_at']
         indexes = [models.Index(fields=['name', 'type'])]
         constraints = [
-            # Игрок должен иметь user
+            # Игрок обязан иметь user
             models.CheckConstraint(
                 condition=~Q(type='player') | Q(user__isnull=False),
                 name='player_must_have_user'
             ),
-            # Системный актор не может быть игроком
+            # Системный актор не может иметь user
             models.CheckConstraint(
-                condition=Q(is_system=True, user__isnull=True) | Q(is_system=False, user__isnull=False),
-                name='system_or_player_consistency'
+                condition=~Q(is_system=True) | Q(user__isnull=True),
+                name='system_actor_no_user'
             ),
         ]
+

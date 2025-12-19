@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'actors',
     'economy',
     'products',
+    'wallet_inventory',
 ]
 
 MIDDLEWARE = [

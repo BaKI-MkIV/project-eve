@@ -31,7 +31,6 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-
     ROLE_CHOICES = (
         ('player', 'Player'),
         ('master', 'Master'),
@@ -42,18 +41,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     login = models.CharField(max_length=150, unique=True)
     role = models.CharField(max_length=16, choices=ROLE_CHOICES)
 
-
     is_active = models.BooleanField(default=True)
-    is_staff = models.BooleanField(default=False)  # Для доступа в админку
-
-    # Основная связь с актором (для игрока)
-    actor = models.ForeignKey(
-        'actors.Actor',
-        null=True,
-        blank=True,
-        on_delete=models.SET_NULL,
-        related_name='users'
-    )
+    is_staff = models.BooleanField(default=False)
 
     objects = UserManager()
 
@@ -63,11 +52,3 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.login} ({self.get_role_display()})"
 
-    class Meta:
-        constraints = [
-            # Для мастера actors всегда null
-            models.CheckConstraint(
-                condition=Q(role='player') | Q(actor__isnull=True),
-                name='master_actor_must_be_null'
-            )
-        ]
