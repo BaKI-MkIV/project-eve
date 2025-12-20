@@ -1,0 +1,10 @@
+{
+  "id": "giant",
+  "name": "Gas Giant",
+  "description": "A massive gas giant planet",
+  "type": "gas giant",
+  "radius": 3.0,
+  "hasRing": true,
+  "numOrbits": 8,
+  "visible": true
+}

@@ -1,0 +1,90 @@
+[
+  {
+    "id": "m1",
+    "name": "Фобос",
+    "description": "Маленькая каменная луна на ближней орбите",
+    "orbitNumber": 1,
+    "displayType": "circle",
+    "radius": 0.25,
+    "color": "#cccccc",
+    "angleDeg": 0,
+    "visible": true
+  },
+  {
+    "id": "m2",
+    "name": "Деймос",
+    "description": "Ещё одна небольшая луна на той же орбите",
+    "orbitNumber": 1,
+    "displayType": "square",
+    "radius": 0.20,
+    "color": "#aaaaaa",
+    "angleDeg": 180,
+    "visible": true
+  },
+  {
+    "id": "m3",
+    "name": "Ио",
+    "description": "Вулканическая луна с яркой поверхностью",
+    "orbitNumber": 2,
+    "displayType": "circle",
+    "radius": 0.40,
+    "color": "#ffdd88",
+    "angleDeg": 45,
+    "visible": true
+  },
+  {
+    "id": "m4",
+    "name": "Европа",
+    "description": "Ледяная луна с подповерхностным океаном",
+    "orbitNumber": 3,
+    "displayType": "circle",
+    "radius": 0.35,
+    "color": "#aaddff",
+    "angleDeg": 90,
+    "visible": true
+  },
+  {
+    "id": "m5",
+    "name": "Ганимед",
+    "description": "Самая большая луна в Солнечной системе",
+    "orbitNumber": 4,
+    "displayType": "circle",
+    "radius": 0.55,
+    "color": "#ddccaa",
+    "angleDeg": 225,
+    "visible": true
+  },
+  {
+    "id": "m6",
+    "name": "Каллисто",
+    "description": "Древняя, покрытая кратерами луна",
+    "orbitNumber": 5,
+    "displayType": "triangle",
+    "radius": 0.30,
+    "color": "#888888",
+    "angleDeg": 315,
+    "visible": true
+  },
+  {
+    "id": "m7",
+    "name": "Титан",
+    "description": "Луна с плотной атмосферой",
+    "orbitNumber": 6,
+    "displayType": "circle",
+    "radius": 0.45,
+    "color": "#ffbb77",
+    "angleDeg": 135,
+    "visible": true
+  },
+  {
+    "id": "m8",
+    "name": "Астероид-компаньон",
+    "description": "Неправильной формы объект на дальней орбите",
+    "orbitNumber": 8,
+    "displayType": "box",
+    "radius": 0.28,
+    "color": "#777777",
+    "angleDeg": 270,
+    "visible": true
+  }
+]
