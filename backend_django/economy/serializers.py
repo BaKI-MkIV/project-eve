@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Currency, Tag, MarketLot
+from .models import Currency, Tag, MarketLot, Transfer
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -41,3 +41,33 @@ class MarketLotSerializer(serializers.ModelSerializer):
             'created_at',
         ]
         read_only_fields = ['status', 'created_at', 'total_price', 'actor_name', 'product_name', 'currency_symbol']
+
+class TransferSerializer(serializers.ModelSerializer):
+    sender_name = serializers.CharField(source='sender.name', read_only=True)
+    recipient_name = serializers.CharField(source='recipient.name', read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True, allow_null=True)
+    currency_symbol = serializers.CharField(source='currency.symbol', read_only=True, allow_null=True)
+
+    # Для создания — передаём actor_id отправителя (как в лотах)
+    sender_actor_id = serializers.IntegerField(write_only=True)
+
+    class Meta:
+        model = Transfer
+        fields = [
+            'id',
+            'sender_actor_id',
+            'sender_name',
+            'recipient',
+            'recipient_name',
+            'transfer_type',  # 'direct' или 'request'
+            'product',
+            'product_name',
+            'quantity',
+            'amount',
+            'currency',
+            'currency_symbol',
+            'status',
+            'created_at',
+            'updated_at',
+        ]
+        read_only_fields = ['status', 'created_at', 'updated_at', 'sender_name', 'recipient_name']
