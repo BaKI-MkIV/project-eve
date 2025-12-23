@@ -4,30 +4,6 @@ from django.db import transaction
 from .models import Inventory, Wallet, FrozenInventory, FrozenWallet
 
 
-@transaction.atomic
-def freeze_inventory(actor, product, quantity, reason="manual", lot=None):
-    """Перемещает quantity предметов из обычного инвентаря в frozen"""
-    if not actor.is_system:  # <-- НОВОЕ: для system пропускаем проверку
-        inv, _ = Inventory.objects.get_or_create(actor=actor, product=product)
-        if inv.quantity < quantity:
-            raise ValueError(f"Недостаточно {product.name} в инвентаре: {inv.quantity} < {quantity}")
-
-        inv.quantity -= quantity
-        if inv.quantity <= 0:
-            inv.delete()
-        else:
-            inv.save()
-    # Для system — просто создаём frozen, без вычитания
-
-    frozen, _ = FrozenInventory.objects.get_or_create(
-        actor=actor, product=product, reason=reason,
-        defaults={'quantity': quantity, 'lot': lot}
-    )
-    if not frozen._state.adding:
-        frozen.quantity += quantity
-        frozen.save()
-    return frozen
-
 
 @transaction.atomic
 def unfreeze_inventory(actor, product, quantity, reason="manual"):
@@ -53,26 +29,46 @@ def unfreeze_inventory(actor, product, quantity, reason="manual"):
 
 
 @transaction.atomic
+def freeze_inventory(actor, product, quantity, reason="manual", lot=None):
+    """Перемещает quantity предметов из обычного инвентаря в frozen"""
+    if not actor.is_system:
+        inv, _ = Inventory.objects.get_or_create(actor=actor, product=product)
+        if inv.quantity < quantity:
+            raise ValueError(f"Недостаточно {product.name} в инвентаре: {inv.quantity} < {quantity}")
+
+        inv.quantity -= quantity
+        if inv.quantity <= 0:
+            inv.delete()
+        else:
+            inv.save()
+
+    frozen, _ = FrozenInventory.objects.get_or_create(
+        actor=actor, product=product, reason=reason,
+        defaults={'quantity': quantity, 'lot': lot}
+    )
+    if not frozen._state.adding:
+        frozen.quantity += quantity
+        frozen.save()
+    return frozen
+
+@transaction.atomic
 def freeze_wallet(actor, currency, amount, reason="manual", lot=None):
-    """Замораживает деньги, привязывая к лоту"""
-    wallet, _ = Wallet.objects.get_or_create(actor=actor, currency=currency, defaults={'amount': 0})
-    if wallet.amount < amount:
-        raise ValueError(f"Недостаточно средств: {wallet.amount} < {amount}")
+    """Замораживает деньги"""
+    if not actor.is_system:
+        wallet, _ = Wallet.objects.get_or_create(actor=actor, currency=currency, defaults={'amount': 0})
+        if wallet.amount < amount:
+            raise ValueError(f"Недостаточно средств: {wallet.amount} < {amount}")
 
-    wallet.amount -= amount
-    wallet.save()
+        wallet.amount -= amount
+        wallet.save()
 
-    frozen, created = FrozenWallet.objects.get_or_create(
-        actor=actor,
-        currency=currency,
-        reason=reason,
+    frozen, _ = FrozenWallet.objects.get_or_create(
+        actor=actor, currency=currency, reason=reason,
         defaults={'amount': amount, 'lot': lot}
     )
-    if not created:
+    if not frozen._state.adding:
         frozen.amount += amount
-        frozen.lot = lot
         frozen.save()
-
     return frozen
 
 

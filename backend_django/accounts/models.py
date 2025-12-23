@@ -1,4 +1,6 @@
 # backend_django/accounts/models.py
+import secrets
+
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.db.models import Q
@@ -52,3 +54,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     def __str__(self):
         return f"{self.login} ({self.get_role_display()})"
 
+
+class AutomatToken(models.Model):
+    """
+    Токен для системных скриптов / модулей (роль 'automat')
+    """
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='automat_token')
+    key = models.CharField(max_length=40, unique=True, editable=False)
+
+    def save(self, *args, **kwargs):
+        if not self.key:
+            self.key = secrets.token_hex(20)  # 40 символов
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.user.login} token"

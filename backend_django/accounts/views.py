@@ -1,12 +1,14 @@
 # accounts/views.py
 from drf_spectacular.utils import extend_schema
 from rest_framework import viewsets, permissions
+from rest_framework.authentication import BaseAuthentication
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from .models import User
+from .models import User, AutomatToken
 from .serializers import UserSelfSerializer, UserMasterSerializer, MyTokenObtainPairSerializer
 
 
@@ -49,3 +51,30 @@ class MyTokenRefreshView(TokenRefreshView):
     @extend_schema(tags=['auth'], description='Обновление access токена')
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
+
+
+class AutomatTokenAuthentication(BaseAuthentication):
+    keyword = 'Automat'
+
+    def authenticate(self, request):
+        header = request.headers.get('Authorization')
+        if not header:
+            return None
+
+        try:
+            keyword, token = header.split()
+        except ValueError:
+            return None
+
+        if keyword != self.keyword:
+            return None
+
+        try:
+            token_obj = AutomatToken.objects.select_related('user').get(
+                token=token,
+                is_active=True
+            )
+        except AutomatToken.DoesNotExist:
+            raise AuthenticationFailed('Invalid automat token')
+
+        return (token_obj.user, None)

@@ -11,7 +11,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-change-me-in-producti
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "evebend.itsconstant.site", "eve.itsconstant.site"]
+ALLOWED_HOSTS = ["localhost:4000", "127.0.0.1", "0.0.0.0", "evebend.itsconstant.site", "eve.itsconstant.site"]
 
 # Application definition
 INSTALLED_APPS = [
@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     # Third-party
     'rest_framework',
     'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
 
     # Your apps
@@ -94,6 +95,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # ==================== DRF & JWT ====================
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'accounts.authentication.AutomatTokenAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': [
@@ -120,12 +122,12 @@ SIMPLE_JWT = {
 }
 
 # ==================== CORS ====================
-CORS_ALLOW_ALL_ORIGINS = True  # В продакшене замени на конкретные домены!
-# Или более безопасно:
-# CORS_ALLOWED_ORIGINS = [
-#     "http://localhost:3000",
-#     "http://127.0.0.1:3000",
-# ]
+CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOWED_ORIGINS = [
+    "https://eve.itsconstant.site",
+    "https://itsconstant.site"
+]
 
 # ==================== Templates (для админки) ====================
 TEMPLATES = [
@@ -155,7 +157,7 @@ LOGGING = {
     },
     'root': {
         'handlers': ['console'],
-        'level': 'INFO',
+        'level': 'WARNING',
     },
 }
 

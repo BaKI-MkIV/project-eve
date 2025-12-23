@@ -1,9 +1,6 @@
-# economy/models.py
 from django.db import models
-
 from actors.models import Actor
 from products.models import Product
-
 
 class Currency(models.Model):
     name = models.CharField(max_length=50, unique=True)
@@ -73,3 +70,38 @@ class MarketLot(models.Model):
     @property
     def total_price(self):
         return self.price_per_unit * self.quantity
+
+
+class Transfer(models.Model):
+    TYPE_CHOICES = [
+        ('direct', 'Мгновенная отправка'),
+        ('request', 'Запрос на получение'),
+    ]
+
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает подтверждения'),
+        ('accepted', 'Принят'),
+        ('rejected', 'Отклонён'),
+        ('cancelled', 'Отменён'),
+    ]
+
+    sender = models.ForeignKey(Actor, on_delete=models.CASCADE, related_name='sent_transfers', verbose_name="Отправитель")
+    recipient = models.ForeignKey(Actor, on_delete=models.CASCADE, related_name='received_transfers', verbose_name="Получатель")
+    transfer_type = models.CharField("Тип передачи", max_length=10, choices=TYPE_CHOICES)
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Предмет")
+    quantity = models.PositiveIntegerField("Количество", default=0)
+    amount = models.DecimalField("Сумма", max_digits=16, decimal_places=2, default=0)
+    currency = models.ForeignKey(Currency, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Валюта")
+    status = models.CharField("Статус", max_length=20, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Передача активов"
+        verbose_name_plural = "Передачи активов"
+
+    def __str__(self):
+        if self.product:
+            return f"Передача {self.quantity} {self.product.name} от {self.sender} к {self.recipient}"
+        else:
+            return f"Передача {self.amount} {self.currency.symbol} от {self.sender} к {self.recipient}"

@@ -1,13 +1,11 @@
-asgiref==3.11.0
-Django
-djangorestframework==3.16.1
-gunicorn
-psycopg2-binary==2.9.11
-sqlparse==0.5.4
-tzdata==2025.2
-django-cors-headers
-djangorestframework-simplejwt[crypto]==5.3.1
-python-dotenv==1.0.1
-drf-spectacular==0.27.2
-whitenoise
-django-filter
+Django~=5.0             # поддерживаемая мажорная ветка
+djangorestframework~=3.16  # актуальная ветка DRF
+djangorestframework-simplejwt[crypto]~=5.5  # свежая версия JWT auth
+drf-spectacular~=0.29   # свежая версия схем
+django-cors-headers>=4.4.0  # последние минорные выпусков
+django-filter>=24.2.0   # фильтрация DRF
+psycopg2-binary>=2.9.11  # PostgreSQL драйвер
+gunicorn>=21.0.0        # production WSGI сервер
+whitenoise>=6.0.0       # static files
+python-dotenv>=1.0.1    # env vars
+tzdata>=2025.2          # актуальные зоны
