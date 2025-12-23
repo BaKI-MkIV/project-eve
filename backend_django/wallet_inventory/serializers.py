@@ -1,7 +1,7 @@
 # wallet_inventory/serializers.py (полная версия)
 
 from rest_framework import serializers
-from .models import Inventory, Wallet
+from .models import Inventory, Wallet, FrozenWallet, FrozenInventory
 from products.models import Product
 from economy.models import Currency
 from actors.models import Actor
@@ -80,4 +80,49 @@ class WalletItemSerializer(serializers.ModelSerializer):
             'currency_name',
             'currency_symbol',
             'amount',
+        ]
+
+class FrozenWalletItemSerializer(serializers.ModelSerializer):
+    currency_name = serializers.CharField(source='currency.name', read_only=True)
+    currency_symbol = serializers.CharField(source='currency.symbol', read_only=True)
+    lot_id = serializers.IntegerField(source='lot.id', read_only=True, allow_null=True)
+    lot_type = serializers.CharField(source='lot.get_lot_type_display', read_only=True, allow_null=True)
+    reason = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = FrozenWallet
+        fields = [
+            'currency',
+            'currency_name',
+            'currency_symbol',
+            'amount',
+            'reason',
+            'lot_id',
+            'lot_type',
+            'created_at',
+        ]
+
+
+class FrozenInventoryItemSerializer(serializers.ModelSerializer):
+    product_name = serializers.CharField(source='product.name', read_only=True)
+    product_description = serializers.CharField(source='product.description', read_only=True, allow_blank=True)
+    price = serializers.DecimalField(source='product.price', max_digits=18, decimal_places=2, read_only=True, allow_null=True)
+    currency_symbol = serializers.CharField(source='product.currency.symbol', read_only=True, allow_null=True)
+    lot_id = serializers.IntegerField(source='lot.id', read_only=True, allow_null=True)
+    lot_type = serializers.CharField(source='lot.get_lot_type_display', read_only=True, allow_null=True)
+    reason = serializers.CharField(read_only=True)
+
+    class Meta:
+        model = FrozenInventory
+        fields = [
+            'product',
+            'product_name',
+            'product_description',
+            'price',
+            'currency_symbol',
+            'quantity',
+            'reason',
+            'lot_id',
+            'lot_type',
+            'created_at',
         ]

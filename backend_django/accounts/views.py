@@ -12,6 +12,7 @@ from .serializers import UserSelfSerializer, UserMasterSerializer, MyTokenObtain
 
 class UserMeView(APIView):
     permission_classes = [IsAuthenticated]
+    serializer_class = UserSelfSerializer
 
     @extend_schema(tags=['auth'], description='Информация о текущем пользователе')
     def get(self, request):
