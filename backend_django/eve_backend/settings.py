@@ -126,7 +126,8 @@ CORS_ALLOW_ALL_ORIGINS = False
 
 CORS_ALLOWED_ORIGINS = [
     "https://eve.itsconstant.site",
-    "https://itsconstant.site"
+    "https://itsconstant.site",
+    "http://localhost:5173",
 ]
 
 # ==================== Templates (для админки) ====================
@@ -161,30 +162,37 @@ LOGGING = {
     },
 }
 
-SPECTACULAR_SETTINGS = {
+PECTACULAR_SETTINGS = {
     'TITLE': 'RPG Economy API',
     'DESCRIPTION': 'MVP рынка для ролевой игры',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
 
-    # Настройка JWT аутентификации для Swagger
     'COMPONENT_SPLIT_REQUEST': True,
-    'SECURITY': [
-        {
-            'bearerAuth': [],
-        }
-    ],
+
     'COMPONENTS': {
         'securitySchemes': {
             'bearerAuth': {
                 'type': 'http',
                 'scheme': 'bearer',
                 'bearerFormat': 'JWT',
-            }
+                'description': 'JWT токен (Bearer <token>)',
+            },
+            # Добавляем automat как отдельную схему
+            'automatAuth': {
+                'type': 'apiKey',
+                'in': 'header',
+                'name': 'Authorization',
+                'description': 'Токен для внутренних сервисов (automat)',
+            },
         }
     },
 
-    # Опционально: показываем какие методы доступны
+    'SECURITY': [
+        {'bearerAuth': []},
+        {'automatAuth': []},
+    ],
+
     'SWAGGER_UI_SETTINGS': {
         'deepLinking': True,
         'persistAuthorization': True,

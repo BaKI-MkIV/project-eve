@@ -12,7 +12,8 @@ from economy.models import Currency, MarketLot
 from products.models import Product
 from .models import Inventory, Wallet, FrozenWallet, FrozenInventory
 from .serializers import InventoryUpdateSerializer, WalletUpdateSerializer, InventoryItemSerializer, \
-    WalletItemSerializer, FrozenWalletItemSerializer, FrozenInventoryItemSerializer
+    WalletItemSerializer, FrozenWalletItemSerializer, FrozenInventoryItemSerializer, FreezeInventoryResponseSerializer, \
+    FreezeWalletResponseSerializer
 from .utils import unfreeze_wallet, freeze_wallet, unfreeze_inventory, freeze_inventory, change_inventory_quantity, \
     change_wallet_amount
 
@@ -59,6 +60,7 @@ class WalletUpdateView(APIView):
 
 
 class ActorInventoryView(APIView):
+    serializer_class = InventoryItemSerializer
     permission_classes = [IsAuthenticated]  # или можно AllowAny, если публично
 
     def get(self, request, actor_id):
@@ -82,6 +84,7 @@ class ActorInventoryView(APIView):
 
 
 class ActorWalletView(APIView):
+    serializer_class = WalletItemSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, actor_id):
@@ -104,6 +107,7 @@ class ActorWalletView(APIView):
 
 
 class ActorFrozenWalletView(APIView):
+    serializer_class = FrozenWalletItemSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, actor_id):
@@ -128,6 +132,7 @@ class ActorFrozenWalletView(APIView):
 
 
 class ActorFrozenInventoryView(APIView):
+    serializer_class = FrozenInventoryItemSerializer
     permission_classes = [IsAuthenticated]
 
     def get(self, request, actor_id):
@@ -151,6 +156,7 @@ class ActorFrozenInventoryView(APIView):
 
 class FreezeInventoryView(APIView):
     permission_classes = [InternalPermission]
+    serializer_class = FreezeInventoryResponseSerializer  # только для Swagger
 
     def post(self, request):
         actor_id = request.data.get('actor_id')
@@ -197,6 +203,7 @@ class FreezeInventoryView(APIView):
 
 class FreezeWalletView(APIView):
     permission_classes = [InternalPermission]
+    serializer_class = FreezeWalletResponseSerializer
 
     def post(self, request):
         actor_id = request.data.get('actor_id')

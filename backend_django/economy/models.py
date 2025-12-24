@@ -89,7 +89,7 @@ class Transfer(models.Model):
     recipient = models.ForeignKey(Actor, on_delete=models.CASCADE, related_name='received_transfers', verbose_name="Получатель")
     transfer_type = models.CharField("Тип передачи", max_length=10, choices=TYPE_CHOICES)
     product = models.ForeignKey(Product, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Предмет")
-    quantity = models.PositiveIntegerField("Количество", default=0)
+    quantity = models.PositiveIntegerField(null=True, blank=True)
     amount = models.DecimalField("Сумма", max_digits=16, decimal_places=2, default=0)
     currency = models.ForeignKey(Currency, on_delete=models.PROTECT, null=True, blank=True, verbose_name="Валюта")
     status = models.CharField("Статус", max_length=20, choices=STATUS_CHOICES, default='pending')

@@ -1,33 +1,6 @@
-from rest_framework import viewsets, permissions
-
-from wallet_inventory.models import FrozenWallet, FrozenInventory
-from .models import Currency, Tag, Transfer
-from .serializers import CurrencySerializer, TagSerializer, TransferSerializer
-
-
-# ---------------- Currency ----------------
-class CurrencyViewSet(viewsets.ModelViewSet):
-    queryset = Currency.objects.all()
-    serializer_class = CurrencySerializer
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [permissions.AllowAny()]
-        return [permissions.IsAdminUser()]
-
-# ---------------- Tag ----------------
-class TagViewSet(viewsets.ModelViewSet):
-    queryset = Tag.objects.all()
-    serializer_class = TagSerializer
-
-    def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
-            return [permissions.AllowAny()]
-        return [permissions.IsAdminUser()]
-
 # economy/views.py
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -36,13 +9,36 @@ from django.shortcuts import get_object_or_404
 from decimal import Decimal
 
 from actors.models import Actor
-from .models import MarketLot
-from .serializers import MarketLotSerializer
+from wallet_inventory.models import FrozenInventory, FrozenWallet
+from .models import MarketLot, Transfer, Currency, Tag
+from .serializers import MarketLotSerializer, TransferSerializer, CurrencySerializer, TagSerializer
 from wallet_inventory.utils import (
     freeze_inventory, unfreeze_inventory,
     freeze_wallet, unfreeze_wallet
 )
 from wallet_inventory.utils import change_inventory_quantity, change_wallet_amount
+
+class CurrencyViewSet(viewsets.ModelViewSet):
+    queryset = Currency.objects.all()
+    serializer_class = CurrencySerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]  # или IsAuthenticated, если мастерам можно создавать
+
+# ---------------- Tag ----------------
+class TagViewSet(viewsets.ModelViewSet):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.AllowAny()]
+        return [permissions.IsAdminUser()]
+
 
 class MarketLotViewSet(viewsets.ModelViewSet):
     queryset = MarketLot.objects.filter(status='active').select_related('actor', 'product', 'currency')
@@ -51,13 +47,22 @@ class MarketLotViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         qs = MarketLot.objects.filter(status='active').select_related('actor', 'product', 'currency')
+
         product_id = self.request.query_params.get('product')
         lot_type = self.request.query_params.get('lot_type')
+        tag_id = self.request.query_params.get('tag')  # <-- новое
+        tag_name = self.request.query_params.get('tag_name')  # <-- опционально по имени
+
         if product_id:
             qs = qs.filter(product_id=product_id)
         if lot_type in ['sell', 'buy']:
             qs = qs.filter(lot_type=lot_type)
-        return qs.order_by('price_per_unit' if lot_type == 'sell' else '-price_per_unit')
+        if tag_id:
+            qs = qs.filter(product__tags__id=tag_id)
+        if tag_name:
+            qs = qs.filter(product__tags__name__iexact=tag_name)  # или contains
+
+        return qs.distinct()
 
     def perform_create(self, serializer):
         user = self.request.user
@@ -71,7 +76,7 @@ class MarketLotViewSet(viewsets.ModelViewSet):
         if user.role == 'player' and (not actor.user or actor.user != user):
             return Response({"error": "Можно создавать лоты только от своего актора"}, status=status.HTTP_403_FORBIDDEN)
 
-        lot = serializer.save(actor=actor)
+        lot = serializer.save()
         reason = f"lot:{lot.id}"
 
         with transaction.atomic():
@@ -181,6 +186,63 @@ class MarketLotViewSet(viewsets.ModelViewSet):
 
         return Response({"status": "cancelled"})
 
+    @action(detail=False, methods=['post'], url_path='bulk_create', permission_classes=[IsAuthenticated])
+    def bulk_create(self, request):
+        user = request.user
+
+        if user.role != 'master':
+            return Response({"error": "Только мастер может загружать лоты bulk"}, status=403)
+
+        lots_data = request.data.get('lots')
+        if not lots_data or not isinstance(lots_data, list):
+            return Response({"error": "Ожидается список лотов в поле 'lots'"}, status=400)
+
+        created_lots = []
+        errors = []
+
+        with transaction.atomic():
+            for i, lot_data in enumerate(lots_data):
+                actor_id = lot_data.get('actor_id')
+                if not actor_id:
+                    errors.append({"index": i, "error": "actor_id обязателен"})
+                    continue
+
+                serializer = MarketLotSerializer(data=lot_data)
+                if serializer.is_valid():
+                    lot = serializer.save()
+                    reason = f"lot:{lot.id}"
+
+                    try:
+                        if lot.lot_type == 'sell':
+                            freeze_inventory(
+                                actor=lot.actor,
+                                product=lot.product,
+                                quantity=lot.quantity,
+                                reason=reason,
+                                lot=lot
+                            )
+                        else:  # buy
+                            total = lot.total_price
+                            freeze_wallet(
+                                actor=lot.actor,
+                                currency=lot.currency,
+                                amount=total,
+                                reason=reason,
+                                lot=lot
+                            )
+                        created_lots.append(serializer.data)
+                    except ValueError as e:
+                        # если не хватает ресурсов — удаляем лот
+                        lot.delete()
+                        errors.append({"index": i, "error": str(e)})
+                else:
+                    errors.append({"index": i, "error": serializer.errors})
+
+        return Response({
+            "created": created_lots,
+            "errors": errors
+        })
+
 class TransferViewSet(viewsets.ModelViewSet):
     queryset = Transfer.objects.all().select_related('sender', 'recipient', 'product', 'currency')
     serializer_class = TransferSerializer
@@ -196,65 +258,7 @@ class TransferViewSet(viewsets.ModelViewSet):
         # Мастер видит все
         return self.queryset
 
-    def perform_create(self, serializer):
-        user = self.request.user
-        sender_actor_id = self.request.data.get('sender_actor_id')
-        if not sender_actor_id:
-            return Response({"error": "sender_actor_id обязателен"}, status=400)
-
-        sender = get_object_or_404(Actor, id=sender_actor_id)
-
-        # Проверка прав
-        if user.role == 'player' and (not sender.user or sender.user != user):
-            return Response({"error": "Можно отправлять только от своего актора"}, status=403)
-
-        recipient_id = self.request.data.get('recipient')
-        if not recipient_id:
-            return Response({"error": "recipient обязателен"}, status=400)
-        recipient = get_object_or_404(Actor, id=recipient_id)
-
-        if sender == recipient:
-            return Response({"error": "Нельзя отправлять себе"}, status=400)
-
-        transfer = serializer.save(sender=sender, recipient=recipient)
-
-        reason = f"transfer:{transfer.id}"
-
-        with transaction.atomic():
-            try:
-                if transfer.transfer_type == 'direct':
-                    # Мгновенная отправка — сразу передаём
-                    if transfer.product:
-                        change_inventory_quantity(sender, transfer.product, -transfer.quantity)
-                        change_inventory_quantity(recipient, transfer.product, transfer.quantity)
-                    else:
-                        change_wallet_amount(sender, transfer.currency, -transfer.amount)
-                        change_wallet_amount(recipient, transfer.currency, transfer.amount)
-                    transfer.status = 'accepted'
-                    transfer.save()
-
-                elif transfer.transfer_type == 'request':
-                    # Запрос — замораживаем у получателя (он должен подтвердить)
-                    if transfer.product:
-                        freeze_inventory(
-                            actor=recipient,
-                            product=transfer.product,
-                            quantity=transfer.quantity,
-                            reason=reason,
-                            lot=None  # не лот, а transfer
-                        )
-                    else:
-                        freeze_wallet(
-                            actor=recipient,
-                            currency=transfer.currency,
-                            amount=transfer.amount,
-                            reason=reason,
-                            lot=None
-                        )
-                    # status остаётся 'pending'
-
-            except ValueError as e:
-                return Response({"error": str(e)}, status=400)
+    # Убрали perform_create — вся логика теперь в сериализаторе
 
     @action(detail=True, methods=['post'])
     def accept(self, request, pk=None):

@@ -126,3 +126,29 @@ class FrozenInventoryItemSerializer(serializers.ModelSerializer):
             'lot_type',
             'created_at',
         ]
+
+
+class FreezeInventoryResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    frozen_id = serializers.IntegerField()
+    quantity = serializers.IntegerField()
+    lot_id = serializers.IntegerField(allow_null=True)
+    reason = serializers.CharField()
+
+class UnfreezeInventoryResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    quantity = serializers.IntegerField()
+    reason = serializers.CharField()
+
+class FreezeWalletResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    frozen_id = serializers.IntegerField()
+    amount = serializers.DecimalField(max_digits=16, decimal_places=2)
+    lot_id = serializers.IntegerField(allow_null=True)
+    reason = serializers.CharField()
+
+class UnfreezeWalletResponseSerializer(serializers.Serializer):
+    status = serializers.CharField()
+    amount = serializers.DecimalField(max_digits=16, decimal_places=2)
+    currency_id = serializers.IntegerField()
+    reason = serializers.CharField()
